@@ -3,13 +3,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-
 import { JwtService } from '@nestjs/jwt';
-
 import * as bcrypt from 'bcrypt';
-
 import { UsersService } from '../users/users.service';
-
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -53,11 +49,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(
+    const userWithPassword = await this.usersService.findByEmailWithPassword(
       dto.email,
     );
 
-    if (!user) {
+    if (!userWithPassword) {
       throw new UnauthorizedException(
         'Invalid credentials',
       );
@@ -65,7 +61,7 @@ export class AuthService {
 
     const isPasswordMatched = await bcrypt.compare(
       dto.password,
-      user.password,
+      userWithPassword.password,
     );
 
     if (!isPasswordMatched) {
@@ -74,7 +70,8 @@ export class AuthService {
       );
     }
 
-    const token = await this.generateToken(user.id);
+    const token = await this.generateToken(userWithPassword.id);
+    const user = await this.usersService.findByEmail(dto.email);
 
     return {
       message: 'Login successful',
